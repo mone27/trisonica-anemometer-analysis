@@ -1,0 +1,18 @@
+20/11/2019
+started working on importing data from TRS and WM
+
+
+
+
+
+
+
+prendersi 10-17 agosto
+
+rotazione 2
+u=u
+v=W
+W=-v  (da mettere dopo a mano)
+
+
+
