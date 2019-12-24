@@ -1,0 +1,34 @@
+20/11/2019
+started working on importing data from TRS and WM
+
+21/12/2019
+you must invert the u of TRS1
+v of TRS1 is perfect
+w of TRS1 is not that good
+
+23/12/2019
+found correct definition of direction:
+for WM and EddyPro:
+u is positive when the wind flows from south to north
+v is positive when the wind flows from east to west
+w is positive when the wind goes up
+here more info at page 7 http://gillinstruments.com/data/manuals/1561-PS-0001%20WindMaster%20Windmaster%20Pro%20Manual%20Issue%2015.pdf
+For TRS (indefault setting called "otms", see page 7 https://anemoment.com/wp-content/uploads/2019/04/Trisonica-Mini-User-Manual-Ap2019.pdf)
+u is positive when the wind flows from north to south
+v is positive when the wind flows from east to west
+w is positive when the wind goes up
+
+This mean you need to invert u component of TRS
+24/12/2018
+rotating u and v for TRS2 by +/- 45° seems is not working to get correct axes coordinates
+cannot understand how EddyPro is calculating wind_dir
+wind_dir of TRS1 is currently wrong since we u has not been inverted
+prendersi 10-17 agosto
+
+rotazione 2
+u=u
+v=W
+W=-v  (da mettere dopo a mano)
+
+
+
