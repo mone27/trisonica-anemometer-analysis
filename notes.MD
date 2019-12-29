@@ -19,11 +19,21 @@ v is positive when the wind flows from east to west
 w is positive when the wind goes up
 
 This mean you need to invert u component of TRS
+
 24/12/2018
 rotating u and v for TRS2 by +/- 45° seems is not working to get correct axes coordinates
 cannot understand how EddyPro is calculating wind_dir
 wind_dir of TRS1 is currently wrong since we u has not been inverted
-prendersi 10-17 agosto
+
+proposed correction for TRS2 (check them!)
+u = - rot_45°(u)
+v = -w
+w = rot_45°(v)
+
+29/12/2018
+generated dataset with fixed axes for TRS1 using data_prepocessing.py.
+For all data from August and Septmber (~12GB) this is the time it took:
+`CPU times: user 6min 51s, sys: 15.5 s, total: 7min 6s`
 
 rotazione 2
 u=u

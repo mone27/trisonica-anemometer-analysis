@@ -7,23 +7,25 @@ import seaborn as sns
 # %autoreload 2
 # sns.set()
 import matplotlib.pyplot as plt
-
 import plotly.express as px
 import plotly.io as pio
+
 pio.renderers.default = "browser"
 
 # %% define constants
 proc_dir = Path("/r/media/simone/Simone DATI/TRISONICA_DATA/Processed/")
 trs1_path = proc_dir / "TRS1_ago_sept" / "eddypro_TRS_1_full_output_2019-12-20T103011_exp.csv"
-trs2_cor_path = proc_dir / "TRS2_cor" / "eddypro_TRS_2_cor_full_output_2019-12-21T140050_exp.csv"
+trs2_uncor_path = proc_dir / "TRS2_cor" / "eddypro_TRS_2_uncor_full_output_2019-12-21T140050_exp.csv"
 wm1_path = proc_dir / "WM1_ago_sept" / "eddypro_WM1_full_output_2019-12-20T105458_exp.csv"
 wm2_path = proc_dir / "WM1_ago_sept" / "eddypro_WM2_full_output_2019-12-20T124352_exp.csv"
 cache_dir = Path("./processed_data")
-period= pd.date_range('2018-08-10', '2018-08-13') # after 14 problems with TRS2 data
+start_date = '2018-08-10'
+end_date = '2018-08-13'  # after 14 problems with TRS2
 
 # %% load and filter datasets
-wm1, wm2, trs1, trs2 = map(lambda p: load_ep(p).loc[period].loc[wind_cols].rename(wind_comp_rename),
-                            [wm1_path, wm2_path, trs1_path, trs2_cor_path])
+wm1, wm2, trs1, trs2 = map(
+    lambda p: load_ep_cache(p).loc[start_date:end_date].loc[:,wind_cols].rename(columns=wind_comp_rename),
+    [wm1_path, wm2_path, trs1_path, trs2_uncor_path])
 
 # %% hack: add plot metadata 
 trs2.plot_info = {'label': 'TRS2 cor', 'color': "royalblue"}
@@ -34,16 +36,16 @@ trs1.plot_info = {'label': 'TRS1', 'color': 'orange'}
 # invert u for TRS1: TODO fix it before EP processing
 trs1.u = -trs1.u
 # ??
-trs2.v = -trs2.v
+# trs2.v = -trs2.v
 # ------------------------plots section----------------------
 # %%
-df1 = wm1-trs1
+df1 = wm1 - trs1
 print(np.mean(df1[df1 > 0]))
 print(np.mean(df1[df1 < 0]))
-plot_dist_comp(wm1-trs1, ['u', 'v', 'w'])
-plot_dist_comp(wm1-trs1, ['wind_speed'])
+plot_dist_comp(wm1 - trs1, ['u', 'v', 'w'])
+plot_dist_comp(wm1 - trs1, ['wind_speed'])
 # %%
-plot_components([wm1, wm2, trs1, trs2], ['u', 'v', 'w','wind_speed'])
+plot_components([wm1, wm2, trs1, trs2], ['u', 'v', 'w', 'wind_speed'])
 plot_components([wm1, trs1], ['wind_speed', 'v'], vertical=False)
 plot_components([wm1, trs1], ['v'])
 plot_components([wm1, trs1], ['u'])
@@ -57,35 +59,45 @@ wm1fa = wm1.loc[filt_angles]
 trs2fa = trs2.loc[filt_angles]
 trs2fa.plot_info = {'label': 'TRS2 uncor', 'color': "royalblue"}
 wm1fa.plot_info = {'label': 'WM1', 'color': 'lightgreen'}
+
+
 # %%
 def fix_axes_trs2(df):
     """applies axes remap and rotations for a vertically mounted TRS, see notes.MD"""
     df = df.copy()
-    df = rotate_u_v(df, angle=-np.pi/4)
+    df = rotate_u_v(df, angle=-np.pi / 4)
     df.u, df.v, df.w = -df.u, -df.w, df.v
     return df
+
+# %% some more testing about TRS2
+fig1, ax1 = plt.subplots(1, 1)
+ax1.plot(wm1fa.v, **wm1fa.plot_info)
+ax1.plot(trs2fa.w, **trs2fa.plot_info)
+ax1.legend()
 # %%
 trs2r = trs2fa.pipe(fix_axes_trs2)
 trs2r.plot_info = {'label': 'TRS2 cor', 'color': "royalblue"}
 wm1 = wm1.pipe(add_angle_attack)
 # %%
 plot_components([wm1], ['angle_attack'])
-plot_components([wm1fa, trs2r], ['u','v', 'w'], style='*-')
-#%%
-plot_components([wm1fa, trs2fa,], ['wind_speed', ], style=":o")
+plot_components([wm1fa, trs2r], ['u', 'v', 'w'], style='*-')
+# %%
+plot_components([wm1fa, trs2fa, ], ['wind_speed', ], style=":o")
 plot_components([wm1fa, trs2fa], ['w'], style=":o")
 plot_components([wm1fa, trs2fa], ['wind_dir'], style='*')
 # %% reference plot for TRS2 with fixed angles
-fig1fa, ax1fa = plt.subplots(1,1)
+fig1fa, ax1fa = plt.subplots(1, 1)
 wm1.wind_speed.plot(ax=ax1fa, **wm1.plot_info, style="+--")
 
 # scaled_dir = wm1fa.wind_dir / 180
-wm1fa.wind_speed.plot(ax=ax1fa, legend="Wind direction between 30° north or south", color="darkgreen", marker="o", linestyle="")
-trs2fa.wind_speed.plot(ax=ax1fa, legend="Wind direction between 30° north or south", color="blue", marker="o", linestyle="")
+wm1fa.wind_speed.plot(ax=ax1fa, legend="Wind direction between 30° north or south", color="darkgreen", marker="o",
+                      linestyle="")
+trs2fa.wind_speed.plot(ax=ax1fa, legend="Wind direction between 30° north or south", color="blue", marker="o",
+                       linestyle="")
 trs2.wind_speed.plot(ax=ax1fa, **trs2.plot_info)
 ax1fa.legend()
 # %%
-fig2fa, ax2fa = plt.subplots(1,1)
+fig2fa, ax2fa = plt.subplots(1, 1)
 ax2fa.scatter(wm1fa.wind_speed, trs2fa.wind_speed)
 
 # %%
@@ -127,11 +139,12 @@ plt.legend()
 from windrose import WindroseAxes
 import matplotlib.cm as cm
 import numpy as np
-ax1,ax2, ax3 = [ WindroseAxes.from_ax() for i  in range(3)]
+
+ax1, ax2, ax3 = [WindroseAxes.from_ax() for i in range(3)]
 
 ax1.bar(trs1.wind_dir, trs1.wind_speed, normed=True, opening=0.6, bins=8, label="Trisonica")
-ax2.bar(wm1.wind_dir, wm1.wind_speed, normed=True, bins=8,label="Wind Master 1", opening=0.6)
-ax3.bar(wm1.wind_dir, wm1.wind_speed, normed=True, bins=8,label="Wind Master 1", opening=0.6)
+ax2.bar(wm1.wind_dir, wm1.wind_speed, normed=True, bins=8, label="Wind Master 1", opening=0.6)
+ax3.bar(wm1.wind_dir, wm1.wind_speed, normed=True, bins=8, label="Wind Master 1", opening=0.6)
 ax1.legend()
 ax2.legend()
 ax3.legend()

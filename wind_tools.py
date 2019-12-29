@@ -63,7 +63,7 @@ def from_ep_full(file: Path) -> pd.DataFrame:
 def drop_empty_cols(df):
     return df.drop(columns=['DOY', 'filename', 'daytime', 'file_records', 'used_records','ET', 'water_vapor_density',
                             'e','specific_humidity', 'RH', 'VPD','Tdew', 'roll', 'bowen_ratio'])
-def load_ep(file: Path, cache_dir=Path(".")) -> pd.DataFrame:
+def load_ep_cache(file: Path, cache_dir=Path(".")) -> pd.DataFrame:
     """ load an edddypro full stat file, filtering columns and caching the result in an hdf5 file """
     hdf5_path = cache_dir / (file.name + ".h5")
     if hdf5_path.is_file():
