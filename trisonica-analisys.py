@@ -1,10 +1,12 @@
+# %load_ext autoreload
+# %autoreload 2
+
 from wind_tools import *
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import seaborn as sns
-# %load_ext autoreload
-# %autoreload 2
+
 # sns.set()
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -13,8 +15,8 @@ import plotly.io as pio
 pio.renderers.default = "browser"
 
 # %% define constants
-proc_dir = Path("/r/media/simone/Simone DATI/TRISONICA_DATA/Processed/")
-trs1_path = proc_dir / "TRS1_ago_sept" / "eddypro_TRS_1_full_output_2019-12-20T103011_exp.csv"
+proc_dir = Path("/run/media/simone/Simone DATI/TRISONICA_DATA/Processed/")
+trs1_path = proc_dir / "TRS1_ep_fixed_axes_ago_sept" / "eddypro_TRS_1_fixed_axes_full_output_2019-12-30T133606_exp.csv"
 trs2_uncor_path = proc_dir / "TRS2_cor" / "eddypro_TRS_2_uncor_full_output_2019-12-21T140050_exp.csv"
 wm1_path = proc_dir / "WM1_ago_sept" / "eddypro_WM1_full_output_2019-12-20T105458_exp.csv"
 wm2_path = proc_dir / "WM1_ago_sept" / "eddypro_WM2_full_output_2019-12-20T124352_exp.csv"
@@ -34,7 +36,7 @@ wm2.plot_info = {'label': 'WM2', 'color': 'darkgreen'}
 trs1.plot_info = {'label': 'TRS1', 'color': 'orange'}
 # trs2['v'] = -trs2.v
 # invert u for TRS1: TODO fix it before EP processing
-trs1.u = -trs1.u
+#trs1.u = -trs1.u
 # ??
 # trs2.v = -trs2.v
 # ------------------------plots section----------------------
@@ -52,6 +54,8 @@ plot_components([wm1, trs1], ['u'])
 plot_components([wm1, trs1], ['w'])
 plot_components([wm1, trs1], ['wind_speed'])
 plot_components([wm1, trs1], ['v'], style='+')
+# %% scatter plots
+plot_components_scatter(wm1, trs1, ['u', 'v', 'w', 'wind_speed'], color="lightblue", edgecolor="steelblue")
 # %%
 # taking 30° range both north and south, wm1fa -> wm1 filtered angles
 filt_angles = filter_by_wind_dir(wm1, 15)
@@ -139,16 +143,17 @@ plt.legend()
 from windrose import WindroseAxes
 import matplotlib.cm as cm
 import numpy as np
+fig = plt.figure()
+axes = [fig.add_subplot(1,3,i, projection="windrose") for i in range(1,4)]
 
-ax1, ax2, ax3 = [WindroseAxes.from_ax() for i in range(3)]
+axes[0].bar(trs1.wind_dir, trs1.wind_speed, normed=True, opening=0.6, bins=8, label="Trisonica")
+axes[1].bar(wm1.wind_dir, wm1.wind_speed, normed=True, bins=8, label="Wind Master 1", opening=0.6)
+# axes[3].bar(wm2.wind_dir, wm2.wind_speed, normed=True, bins=8, label="Wind Master 1", opening=0.6)
+[ax.legend() for ax in axes]
 
-ax1.bar(trs1.wind_dir, trs1.wind_speed, normed=True, opening=0.6, bins=8, label="Trisonica")
-ax2.bar(wm1.wind_dir, wm1.wind_speed, normed=True, bins=8, label="Wind Master 1", opening=0.6)
-ax3.bar(wm1.wind_dir, wm1.wind_speed, normed=True, bins=8, label="Wind Master 1", opening=0.6)
-ax1.legend()
-ax2.legend()
-ax3.legend()
-# # %% plotly express
+# %% plotly express
+
+
 # import plotly.express as px
 #
 # fig = px.bar_polar(trs1, r="wind_speed", theta="wind_dir")
