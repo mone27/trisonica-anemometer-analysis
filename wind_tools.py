@@ -5,11 +5,26 @@ from typing import Iterable
 import seaborn as sns
 from pathlib import Path
 from sklearn.linear_model import LinearRegression
+from scipy.constants import convert_temperature
 # %% general funcs
+
+def test_close(a,b): assert np.allclose(a,b)
+
 def filt_dfs(dfs, filter):
     return [df.loc[filter] for df in dfs]
 wind_cols = ['u_unrot','v_unrot', 'w_unrot', 'wind_speed', 'wind_dir']
 wind_comp_rename = {'u_unrot': 'u', 'v_unrot': 'v', 'w_unrot': 'w'}
+
+def c2k(t): return convert_temperature(t, 'Celsius', 'Kelvin')
+
+def cart2pol(x, y):
+    theta = np.arctan2(y,x)
+    r = np.sqrt(x**2+y**2)
+    return theta, r
+def pol2cart(theta, r):
+    x = np.cos(theta) * r
+    y = np.sin(theta) * r
+    return x, y
 # %% plot helpers
 def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=True, **kwargs):
     n_plts = (1,len(cols)); sharey = True; sharex = False
@@ -65,17 +80,18 @@ def add_wind_speed(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df['wind_speed'] = np.sqrt(sum([df[c]**2 for c in 'uvw']))
     return df
-def add_wind_dir(df: pd.DataFrame) -> pd.DataFrame:
-    print("warning is not the same of EddyPro")
-    df = df.copy()
-    df['wind_dir'] = 360 - (np.arctan2(df.v, df.u) * 180 / np.pi)
-    return df
-def rotate_u_v(df, angle):
-    """rotate the components u and v by an angle considering the u as the x-axis"""
-    df = df.copy()
-    df.u = df.u*np.cos(angle) - df.v*np.sin(angle)
-    df.v = df.u*np.sin(angle) + df.v*np.cos(angle)
-    return df
+
+def get_wind_dir(df):
+    """try to mimic behaviour of EP SingleWindDirection"""
+    return (180 - np.rad2deg(np.arctan2(df.v, df.u)) + offset) % 360 
+def fix_quadrant(wd): return (180 - wd) % 360
+def rotate_wind(df, ang):
+    """rotate the u and v compoment, respectively x and y, of the wind by a given angle, using a rotation matrix.
+    returns a datafram with u and v compoments"""
+    ang = np.deg2rad(ang)
+    rot_mat = np.array([[np.cos(ang), -np.sin(ang)],
+                       [np.sin(ang), np.cos(ang)]])
+    return np.matmul(df[['u', 'v']], rot_mat)
 # %% dataset loading from EddyPro
 def from_ep_full(file: Path) -> pd.DataFrame:
     return (pd.read_csv(file, skiprows=[0, 2], parse_dates=[['date', 'time']])\
