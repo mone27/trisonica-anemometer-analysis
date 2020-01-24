@@ -35,10 +35,14 @@ generated dataset with fixed axes for TRS1 using data_prepocessing.py.
 For all data from August and Septmber (~12GB) this is the time it took:
 `CPU times: user 6min 51s, sys: 15.5 s, total: 7min 6s`
 
-rotazione 2
-u=u
-v=W
-W=-v  (da mettere dopo a mano)
+15/01
+trying to understand how EP calculates wind dir, need to understand why it adds pi in AngularAverageNoError (line 198)
+Discovered!! pi is due to the fact tha atan2 returns from -180 to 180 and adding 180 seems it is equal to converting to make `a = a % 360` and then do `180-a`.
+
+23/01
+when you need to calc the average wind_speed you cannot calc the wind_speed for each observation and then average but you need to average the components and the calc the wind_speed :)
+
+
 
 
 
