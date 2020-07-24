@@ -10,6 +10,11 @@ from scipy.constants import convert_temperature
 
 def test_close(a,b): assert np.allclose(a,b)
 
+def get_ax(nrows=1, ncols=1): return plt.subplots(nrows, ncols)[1]
+
+def mbe(a,b): return (a-b).abs().mean()
+def mse(x, y): return (x-y).pow(2).mean()
+
 def filt_dfs(dfs, filter):
     return [df.loc[filter] for df in dfs]
 wind_cols = ['u_unrot','v_unrot', 'w_unrot', 'wind_speed', 'wind_dir']
@@ -36,25 +41,32 @@ def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=Tr
             df[col].plot(ax=axes[i], **(df.plot_info if hasattr(df,'plot_info') else {}), **kwargs)
         axes[i].set_title(col)
         axes[i].legend()
-def plot_components_scatter(df1, df2, cols=('u','v','w'), vertical=True, linreg=True, **kwargs):
+def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True, title=None, figsize=(6,5),**kwargs):
+    try:
+        df1, df2 = dfs
+    except ValueError:
+        raise("wrong")
     n_plts = (1,len(cols)); sharey = True; sharex = False
     if not vertical:n_plts=(len(cols), 1); sharey=False; sharex=True  #invert rows/columns
-    fig, axes = plt.subplots(*n_plts)
+    fig, axes = plt.subplots(*n_plts, figsize=figsize)
+    fig.suptitle(title)
     if not isinstance(axes, Iterable): axes = np.array([axes])  # if axes is no iterable  make it iterable
     for i, col in enumerate(cols):
         axes[i].scatter(df1[col], df2[col], **kwargs)
+        df1_lbl = df1.plot_info['label'] if hasattr(df1,'plot_info') else ""
+        df2_lbl = df2.plot_info['label'] if hasattr(df2,'plot_info') else ""
         if linreg:
             # do linear regression
             df1_x = np.expand_dims(df1[col].to_numpy(), -1)
             reg = LinearRegression().fit(df1_x, df2[col])  # adding empty dimension for sklearn
             pred_y = reg.predict(df1_x)
             # plot theorical line
-            axes[i].plot(df1[col],df1[col], color='green', label="theory if trs1=wm1")
+            axes[i].plot(df1[col],df1[col], color='green', label=f"theory if {df1_lbl}={df2_lbl}")
             # plot actual regression line
             axes[i].plot(df1[col], pred_y, color='red', label=f"linear regression")
         axes[i].set_title(col)
-        axes[i].set_xlabel(df1.plot_info['label'] if hasattr(df1,'plot_info') else "")
-        axes[i].set_ylabel(df2.plot_info['label'] if hasattr(df2,'plot_info') else "")
+        axes[i].set_xlabel(df1_lbl)
+        axes[i].set_ylabel(df2_lbl)
         axes[i].legend()
 
 def plot_dist_comp(df, cols):
@@ -63,8 +75,8 @@ def plot_dist_comp(df, cols):
         sns.distplot(df[c], norm_hist=True, ax=axes, label=c)
     axes.legend()
 # %% wind functions
-def wind_speed(w_comp):
-    return np.sqrt(sum([c**2 for c in w_comp]))
+def wind_speed(df):
+    return np.sqrt(sum([df[c]**2 for c in 'uvw']))
 def filter_by_wind_dir(df, ang):
     """ filters when wind_dir is between +/- angle (in degrees) both north and south"""
     w = df.wind_dir
@@ -73,7 +85,7 @@ def filter_by_wind_dir(df, ang):
 def add_angle_attack(df):
     df = df.copy()
     w_hor = np.sqrt(df.u**2+df.v**2)
-    df['angle_attack'] = np.arctan(df.w/w_hor) * 180 / np.pi
+    df['angle_attack'] = np.rad2deg(np.arctan2(df.w, w_hor))
     return df
 
 def add_wind_speed(df: pd.DataFrame) -> pd.DataFrame:
@@ -83,15 +95,31 @@ def add_wind_speed(df: pd.DataFrame) -> pd.DataFrame:
 
 def get_wind_dir(df):
     """try to mimic behaviour of EP SingleWindDirection"""
-    return (180 - np.rad2deg(np.arctan2(df.v, df.u)) + offset) % 360 
+    return (180 - np.rad2deg(np.arctan2(df.v, df.u))) % 360 
 def fix_quadrant(wd): return (180 - wd) % 360
+
+def wind_speed_comp(df, w_comp):
+    """calculate wind speed only with given components"""
+    return np.sqrt(df.loc[:, list(w_comp)].pow(2).sum(axis=1)).copy()
 def rotate_wind(df, ang):
     """rotate the u and v compoment, respectively x and y, of the wind by a given angle, using a rotation matrix.
     returns a datafram with u and v compoments"""
+    return rotate_wind_comp(df, ang, ['u', 'v'])
+def rotate_wind_comp(df, ang, comp):
+    """rotate the give compomenst, respectively x and y, of the wind by a given angle, using a rotation matrix.
+    returns a dataframe with the given compoments"""
+    df = df.copy()
     ang = np.deg2rad(ang)
     rot_mat = np.array([[np.cos(ang), -np.sin(ang)],
                        [np.sin(ang), np.cos(ang)]])
-    return np.matmul(df[['u', 'v']], rot_mat)
+    df[comp] = np.matmul(df[comp], rot_mat)
+    return df
+
+def add_wind_dir(df, wind_dir_name='wind_dir'):
+    df = df.copy()
+    df[wind_dir_name] = np.rad2deg(np.arctan2(df.v, df.u))
+    return df
+    
 # %% dataset loading from EddyPro
 def from_ep_full(file: Path) -> pd.DataFrame:
     return (pd.read_csv(file, skiprows=[0, 2], parse_dates=[['date', 'time']])\
