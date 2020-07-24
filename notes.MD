@@ -44,5 +44,71 @@ when you need to calc the average wind_speed you cannot calc the wind_speed for 
 
 
 
+##### 2020 version ######
+
+22/07/2020
+
+configured M506 and M507 for outputting at 10Hz and with many paramas (see screens)
+analyzed last ~2 weeks of WM data and seen most of the wind from 250 degrees
+Installed for tests m506 (vertical, north aligned ??) m507 (horizontal), rotated 45 degres main axis aligned with main structure (320 degrees??, problemns with compass measurements)
+
+23/07/2020
+First analysis of the wind of the previous night, m506 u axis has been inverted (so to match EP refence system) and then processed with EP at 5 mins. The wind speed (calulated by EP) looks comparable, the wind direction (calculated by EP) completely inverted but looking at the individual components they were completely wrong. Tried also with M507 but got pretty bad results as well, no time to investigate it more.
+
+Reinstallation of the instruments in the field:
+- WM 1 and 2 have been slightly rotated on their base to better access wind from 250°, North OFFSET: 310°
+- M506 has been slightly rotated, North Offset: 0°
+- M507 has been installed on a rotated support being with the bottom (of the anemometer) facing 320° N, then has been also rotated on the pipe so that is you look at the top of the anemometer the north arrow is pointingon the bottom left ( 275° clockswise from the vertical)
+
+Compass measueremenets has been quite difficult so the anemometers can have a +/- 10 ° error in their orientation
+
+Measurement of the distance between anemometers center
+
+M6 risp wm1
+-35 cm  E
+-7  cm vert
+-5 cm N
+
+M7 risp wm1
+
+-60 cm E
+-10 cm N
+-7 cm vert
+
+Wm2 risp wm1
+
+33 cm E
+-4 cm N
+0 cm vert
+
+Configuration:
+WM1 com1
+WM2 com2
+m506 com3
+m507 com4
+
+Succesfully connected to wifi and teamviewer
+Launched scanemone for recording data
+
+Cheking in the evening m507 on com4 started but never worked, trying to force close the scanemone process and to reboot the computer but it is not working
+
+
+24/07/2020
+
+Forcing rebooting computer but still issues with reading on scanemone on com4 even it was working fine with putty on serial port
+
+Swapping the port of WM1 with m507, so configuration is:
+WM1 com1
+WM2 com4
+m506 com3
+m507 com2
+
+cheking that all anemometers are correctly working with putty, lauching scanemone.
+First good data from 13:00 
+
+WM2 on com4 works partially for some hours saves data other times it blocked
+
+
+
 
 
