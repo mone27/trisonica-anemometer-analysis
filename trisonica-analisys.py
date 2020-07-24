@@ -138,6 +138,24 @@ plt.legend()
 #
 # plt.legend()
 
+# %% trying to manually add wind_dir to deal with EP issues
+trs1d = add_wind_dir(trs1)
+# trs1wd['wind_dir'] = (trs1wd['wind_dir'] + 180 ) % 360
+wm1d = add_wind_dir(wm1)
+diffd = wm1d - trs1
+
+all_diff = pd.concat([wm1d, trs1d, diffd], axis=1)
+all_diff.to_csv("wind_dir_debug.csv", float_format="%.2f")
+# %%
+_ , ax = plt.subplots(1,1)
+ax.scatter(trs1d.wind_dir, wm1d.wind_dir)
+_, ax = plt.subplots(1,1)
+ax.plot(trs1.wind_dir)
+ax.plot(trs1d.wind_dir)
+# %%
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='polar')
+ax.scatter(np.deg2rad(wm1d.wind_dir), wm1d.wind_speed, c=wm1.wind_dir)
 # %% windrose test
 
 from windrose import WindroseAxes
@@ -146,8 +164,8 @@ import numpy as np
 fig = plt.figure()
 axes = [fig.add_subplot(1,3,i, projection="windrose") for i in range(1,4)]
 
-axes[0].bar(trs1.wind_dir, trs1.wind_speed, normed=True, opening=0.6, bins=8, label="Trisonica")
-axes[1].bar(wm1.wind_dir, wm1.wind_speed, normed=True, bins=8, label="Wind Master 1", opening=0.6)
+axes[0].bar(trs1wd.wind_dir, trs1.wind_speed, normed=True, opening=0.6, bins=8, label="Trisonica")
+axes[1].bar(wm1wd.wind_dir, wm1.wind_speed, normed=True, bins=8, label="Wind Master 1", opening=0.6)
 # axes[3].bar(wm2.wind_dir, wm2.wind_speed, normed=True, bins=8, label="Wind Master 1", opening=0.6)
 [ax.legend() for ax in axes]
 
