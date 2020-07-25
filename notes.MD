@@ -109,6 +109,31 @@ First good data from 13:00
 WM2 on com4 works partially for some hours saves data other times it blocked
 
 
+25/07/2020
+
+Anemometers are logging correctly com4 sometimes is not working.
+
+Trying to understand angle rotation 
+
+
+this function is not working (don't ask why)
+```
+def rotate(tens, ang, axes):
+    rot_matrix = np.array([[np.cos(ang), -np.sin(ang)],
+                       [np.sin(ang), np.cos(ang)]])
+    return np.matmul(tens[:, axes], rot_matrix)
+    
+```
+
+this is working (correctly rotating wind)
+
+```def rotate_ang(df, ang):
+    wind_dir, wind_speed = cart2pol(df.u, df.v)
+    wind_dir += np.deg2rad(ang)
+    return np.column_stack(pol2cart(wind_dir, wind_speed))
+```
+
+For wind dir found this website that explains it quite well http://colaweb.gmu.edu/dev/clim301/lectures/wind/wind-uv and this one https://www.eol.ucar.edu/content/wind-direction-quick-reference
 
 
 
