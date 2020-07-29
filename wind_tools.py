@@ -42,6 +42,14 @@ def pol2cart(theta, r):
     y = np.sin(theta) * r
     return x, y
 
+
+def rotate_ang(data, ang: DegAng):
+    """naive (but working) approach to rotate the u and v componets by given angles"""
+    wind_dir, wind_speed = cart2pol(data[:, 0], data[:, 1])
+    wind_dir += np.deg2rad(ang)
+    return np.column_stack(pol2cart(wind_dir, wind_speed))
+
+
 # %% plot helpers
 def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=True, **kwargs):
     """for each component does a line plot with """
