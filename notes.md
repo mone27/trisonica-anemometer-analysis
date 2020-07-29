@@ -46,13 +46,13 @@ when you need to calc the average wind_speed you cannot calc the wind_speed for 
 
 ##### 2020 version ######
 
-22/07/2020
+### 22/07/2020
 
 configured M506 and M507 for outputting at 10Hz and with many paramas (see screens)
 analyzed last ~2 weeks of WM data and seen most of the wind from 250 degrees
 Installed for tests m506 (vertical, north aligned ??) m507 (horizontal), rotated 45 degres main axis aligned with main structure (320 degrees??, problemns with compass measurements)
 
-23/07/2020
+### 23/07/2020
 First analysis of the wind of the previous night, m506 u axis has been inverted (so to match EP refence system) and then processed with EP at 5 mins. The wind speed (calulated by EP) looks comparable, the wind direction (calculated by EP) completely inverted but looking at the individual components they were completely wrong. Tried also with M507 but got pretty bad results as well, no time to investigate it more.
 
 Reinstallation of the instruments in the field:
@@ -93,7 +93,7 @@ Launched scanemone for recording data
 Cheking in the evening m507 on com4 started but never worked, trying to force close the scanemone process and to reboot the computer but it is not working
 
 
-24/07/2020
+### 24/07/2020
 
 Forcing rebooting computer but still issues with reading on scanemone on com4 even it was working fine with putty on serial port
 
@@ -109,7 +109,7 @@ First good data from 13:00
 WM2 on com4 works partially for some hours saves data other times it blocked
 
 
-25/07/2020
+### 25/07/2020
 
 Anemometers are logging correctly com4 sometimes is not working.
 
@@ -134,6 +134,28 @@ this is working (correctly rotating wind)
 ```
 
 For wind dir found this website that explains it quite well http://colaweb.gmu.edu/dev/clim301/lectures/wind/wind-uv and this one https://www.eol.ucar.edu/content/wind-direction-quick-reference
+
+
+### 27/07/2020
+
+Trying to use inverted v for the m506 since the direction is exactly at the opposite, but not too sure it is going to work
+
+### 28/07/2020
+
+Created 3d model to work understand the necessaray tranformation for m507
+
+Updated data_preprocessing and started analysis
+
+
+
+### 29/07/2020
+
+eddypro_TRS_m507_full_output_2020-07-29T075333_exp -> rotation of 45 
+eddypro_TRS_m507_full_output_2020-07-28T163413_exp -> rotation of -45 (seems to not be working)
+
+with this transforms componets are still completely wrong, but overall wind speed looks promising
+
+
 
 
 
