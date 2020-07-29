@@ -6,6 +6,10 @@ import seaborn as sns
 from pathlib import Path
 from sklearn.linear_model import LinearRegression
 from scipy.constants import convert_temperature
+
+# to mark that the angle must be in degrees and not radians
+DegAng = int
+
 # %% general funcs
 
 def test_close(a,b): assert np.allclose(a,b)
@@ -14,6 +18,10 @@ def get_ax(nrows=1, ncols=1): return plt.subplots(nrows, ncols)[1]
 
 def mbe(a,b): return (a-b).abs().mean()
 def mse(x, y): return (x-y).pow(2).mean()
+
+def mod(ang: DegAng):
+    """returns the modulo of 360"""
+    return ang % 360
 
 def filt_dfs(dfs, filter):
     return [df.loc[filter] for df in dfs]
@@ -79,7 +87,7 @@ def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True,
         axes[i].legend()
 
 
-def plot_dist_comp(df, cols):
+def plot_dist_comp(df, cols='uvw'):
     fig, axes = plt.subplots(1,1)
     for c in cols:
         sns.distplot(df[c], norm_hist=True, ax=axes, label=c)
@@ -91,10 +99,18 @@ def wind_speed(df):
     return np.sqrt(sum([df[c]**2 for c in 'uvw']))
 
 
-def filter_by_wind_dir(df, ang):
+def filter_by_wind_ns_dir(df, ang):
     """ filters when wind_dir is between +/- angle (in degrees) both north and south"""
+    w = filter_by_wind_dir(df, 360, ang)
+
+
+def filter_by_wind_dir(df, start_ang: DegAng, range_ang: DegAng, both_dirs=True):
+    """create a boolean filter where there direction is start_ang +/- range_ang.
+     If both dirs considers (True also start_ang-180) +/- range_ang"""
     w = df.wind_dir
-    return (w > (360 - ang)) | (w < ang) | ((w > (180-ang)) & (w < (180+ang)))
+    filt = (w > mod((start_ang - range_ang))) & (w < mod(start_ang + range_ang))
+    if both_dirs: filt = filt | ((w > mod(((start_ang-180) - range_ang))) & (w < mod((start_ang-180) + range_ang)))
+    return filt
 
 
 def add_angle_attack(df):
@@ -126,6 +142,12 @@ def wind_speed_comp(df, w_comp):
     """calculate wind speed only with given components"""
     return np.sqrt(df.loc[:, list(w_comp)].pow(2).sum(axis=1)).copy()
 
+def rotate_wind_ang(df, ang):
+    df = df.copy()
+    wind_dir, wind_speed = cart2pol(df.u, df.v)
+    wind_dir += np.deg2rad(ang)
+    df.u, df.v = pol2cart(wind_dir, wind_speed)
+    return df
 
 # Warning need to check this is correct
 def rotate_wind(df, ang):
@@ -138,7 +160,7 @@ def rotate_wind(df, ang):
 def rotate_wind_comp(df, ang, comp):
     """rotate the give compomenst, respectively x and y, of the wind by a given angle, using a rotation matrix.
     returns a dataframe with the given compoments"""
-    
+    print("warning can be incorrrect")
     df = df.copy()
     ang = np.deg2rad(ang)
     rot_mat = np.array([[np.cos(ang), -np.sin(ang)],
