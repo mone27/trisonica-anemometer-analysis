@@ -26,6 +26,10 @@ def mod(ang: DegAng):
 def filt_dfs(dfs, filter):
     return [df.loc[filter] for df in dfs]
 
+def resample(dfs, rule):
+    """shortcut to apply resample to a list of dfs, calc mean by default"""
+    return list(map(lambda x: x.resample(rule).mean(), dfs))
+
 wind_cols = ['u_unrot','v_unrot', 'w_unrot', 'wind_speed', 'wind_dir']
 wind_comp_rename = {'u_unrot': 'u', 'v_unrot': 'v', 'w_unrot': 'w'}
 
@@ -51,20 +55,25 @@ def rotate_ang(data, ang: DegAng):
 
 
 # %% plot helpers
-def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=True, **kwargs):
+def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=True, plot_info=[], **kwargs):
     """for each component does a line plot with """
     n_plts = (1,len(cols)); sharey = True; sharex = False
     if not vertical:n_plts=(len(cols), 1); sharey=False; sharex=True  #invert rows/columns
     fig, axes = plt.subplots(*n_plts, sharey=sharey, sharex=sharex)
     if not isinstance(axes, Iterable): axes = np.array([axes])  # if axes is no iterable  make it iterable
     for i, col in enumerate(cols):
-        for df in dfs:
-            df[col].plot(ax=axes[i], **(df.plot_info if hasattr(df,'plot_info') else {}), **kwargs)
+        for ii, df in enumerate(dfs):
+            try:
+                info = plot_info[ii]
+            except IndexError:
+                # if there is nothing try to get the plot info from the df otherwise fall back to empty one
+                info = df.plot_info if hasattr(df,'plot_info') else {}
+            df[col].plot(ax=axes[i], **(info), **kwargs)
         axes[i].set_title(col)
         axes[i].legend()
 
 
-def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True, title=None, figsize=(6,5),**kwargs):
+def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True, title=None, figsize=(6,5), plot_info=[],**kwargs):
     try:
         df1, df2 = dfs
     except ValueError:
@@ -78,8 +87,15 @@ def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True,
     if not isinstance(axes, Iterable): axes = np.array([axes])  # if axes is no iterable  make it iterable
     for i, col in enumerate(cols):
         axes[i].scatter(df1[col], df2[col], **kwargs)
-        df1_lbl = df1.plot_info['label'] if hasattr(df1,'plot_info') else ""
-        df2_lbl = df2.plot_info['label'] if hasattr(df2,'plot_info') else ""
+        
+        try:
+            df1_lbl = plot_info[0]['label']
+            df2_lbl = plot_info[1]['label']
+        except IndexError:
+            # if there is nothing try to get the plot info from the df otherwise fall back to empty one
+            df1_lbl = df1.plot_info['label'] if hasattr(df1,'plot_info') else ""
+            df2_lbl = df2.plot_info['label'] if hasattr(df2,'plot_info') else ""
+            
         if linreg:
             # do linear regression
             df1_x = np.expand_dims(df1[col].to_numpy(), -1)
@@ -95,10 +111,11 @@ def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True,
         axes[i].legend()
 
 
-def plot_dist_comp(df, cols='uvw'):
+def plot_dist_comp(dfs, cols='uvw'):
     fig, axes = plt.subplots(1,1)
-    for c in cols:
-        sns.distplot(df[c], norm_hist=True, ax=axes, label=c)
+    for df in dfs:
+        for c in cols:
+            sns.distplot(df[c], norm_hist=True, ax=axes, label=c)
     axes.legend()
 
 
