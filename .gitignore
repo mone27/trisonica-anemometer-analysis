@@ -3,3 +3,5 @@ data_cache
 test_data
 processed_data
 __pycache__
+*checkpoint.ipynb
+.ipynb-checkpoints
