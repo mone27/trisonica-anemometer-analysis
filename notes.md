@@ -117,7 +117,7 @@ Trying to understand angle rotation
 
 
 this function is not working (don't ask why)
-```
+```python
 def rotate(tens, ang, axes):
     rot_matrix = np.array([[np.cos(ang), -np.sin(ang)],
                        [np.sin(ang), np.cos(ang)]])
@@ -127,7 +127,8 @@ def rotate(tens, ang, axes):
 
 this is working (correctly rotating wind)
 
-```def rotate_ang(df, ang):
+```python
+def rotate_ang(df, ang):
     wind_dir, wind_speed = cart2pol(df.u, df.v)
     wind_dir += np.deg2rad(ang)
     return np.column_stack(pol2cart(wind_dir, wind_speed))
@@ -153,7 +154,30 @@ Updated data_preprocessing and started analysis
 eddypro_TRS_m507_full_output_2020-07-29T075333_exp -> rotation of 45 
 eddypro_TRS_m507_full_output_2020-07-28T163413_exp -> rotation of -45 (seems to not be working)
 
-with this transforms componets are still completely wrong, but overall wind speed looks promising
+with this transforms components are still completely wrong, but overall wind speed looks promising
+
+
+Looking at the angle needed for the rotations (check wm1_axis_rotation.svg) and coming to this conclusion:
+You have reference system A (where you want end results) and you have reference system B (the one of input data)
+From an A point of view B is rotated by alpha angle, to tranform any vector in B in A you need to rotate the vector by -alpha.
+**NB** angles measured in _wind_ mode are the opposite of angles measured in _math_ mode 
+
+for wm1(2) the transform needed is ```rotate_ang(wm1, 310)```   
+
+Inverted v of M507 and seems it is much better
+
+
+## 30/07/2020
+
+Finalized (m506_analysis)[m506_analysis] 
+
+Overall this is what is seems what needs to be done:
+
+- Invert the u
+- Invert the v
+- Rotate by 27° N
+
+
 
 
 
