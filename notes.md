@@ -167,7 +167,7 @@ for wm1(2) the transform needed is ```rotate_ang(wm1, 310)```
 Inverted v of M507 and seems it is much better
 
 
-## 30/07/2020
+### 30/07/2020
 
 Finalized (m506_analysis)[m506_analysis] 
 
@@ -178,8 +178,56 @@ Overall this is what is seems what needs to be done:
 - Rotate by 27° N
 
 
+#### Working on M507
+
+recalculating needed rotations taking into account the inverted v
+
+steps are 
+1. rotate by 45 °
+2. remap axis   
+   u = -u  
+   v = w   
+   w = v   
+   
+
+When processing M507 with possible correct rotation 5-6 EP gives this error:
+```Error(59)> At least one wind component appears to be corrupted (too many implausible values).
+Error(59)> This may also be the result of data exclusion by the "Absolute limits" test or by a
+Error(59)> custom-designed "Flag" in the "Basic Settings" page.
+Error(59)> If the problem occurs for many or all raw files, check those settings.
+```
 
 
+### 31/07/2020
 
+Trying to get the rotation right, rotations done with a reasoning behind are completely wrong but the fact the wind speed looks great give hopes.
 
+Tried different methods to get by brute force the most efficient trasnsformation:
+ 1. rotation matrix with pytorch (gradient works fine but is an overkill and then the rotation matrix is difficult to interpret)
+ 2. Use scipy.transform.rotation the great news is that supports Euler angles (even if not so easy too understand)
+ 3. optimization with scipy minimize
+ 4. Brute force optimization: trying all the possible triplets of angles with ranges of 10°
+ 5. rotation.align_vectors !! (should be the fastest and easiest method)
+ 
+ Obtained some rotations that make a sensible output:
+ - u is around 0 most time, but when is bigger follows decently the wm1
+ - v is almost perfect
+ - w does follow the wm1 but is far from being good
+ 
+ Then tried hard to visualize the obtained rotation, but thinkercard does not rotate on custom plane so at the end using rhinoceros which is way complex but this his job, however the result was pretty useless.
+ Trying also 3d plotting from matplotlib, which probably is the best way forward and the visualization is still useless since the rotation appears on random planes.
+ Almost giving up :(
+ 
+ 
+ Ideas of stuff that needs to be done:
+ - understand why v is so good
+ - ensure for the last time the reasoned transformations sucks
+ - check is the optimized rotation is consistent across different days
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
