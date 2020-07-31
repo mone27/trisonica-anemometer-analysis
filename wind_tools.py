@@ -14,7 +14,7 @@ DegAng = int
 
 def test_close(a,b): assert np.allclose(a,b)
 
-def get_ax(nrows=1, ncols=1): return plt.subplots(nrows, ncols)[1]
+def get_ax(nrows=1, ncols=1, **kwargs): return plt.subplots(nrows, ncols, **kwargs)[1]
 
 def mbe(a,b): return (a-b).abs().mean()
 def mse(x, y): return (x-y).pow(2).mean()
@@ -71,6 +71,7 @@ def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=Tr
             df[col].plot(ax=axes[i], **(info), **kwargs)
         axes[i].set_title(col)
         axes[i].legend()
+    return axes
 
 
 def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True, title=None, figsize=(6,5), plot_info=[],**kwargs):
@@ -175,23 +176,23 @@ def rotate_wind_ang(df, ang):
     return df
 
 # Warning need to check this is correct
-def rotate_wind(df, ang):
-    """rotate the u and v compoment, respectively x and y, of the wind by a given angle, using a rotation matrix.
-    returns a datafram with u and v compoments"""
-    return rotate_wind_comp(df, ang, ['u', 'v'])
+# def rotate_wind(df, ang):
+#     """rotate the u and v compoment, respectively x and y, of the wind by a given angle, using a rotation matrix.
+#     returns a datafram with u and v compoments"""
+#     return rotate_wind_comp(df, ang, ['u', 'v'])
 
 
-# Warning need to check this is correct
-def rotate_wind_comp(df, ang, comp):
-    """rotate the give compomenst, respectively x and y, of the wind by a given angle, using a rotation matrix.
-    returns a dataframe with the given compoments"""
-    print("warning can be incorrrect")
-    df = df.copy()
-    ang = np.deg2rad(ang)
-    rot_mat = np.array([[np.cos(ang), -np.sin(ang)],
-                       [np.sin(ang), np.cos(ang)]])
-    df[comp] = np.matmul(df[comp], rot_mat)
-    return df
+# # Warning need to check this is correct
+# def rotate_wind_comp(df, ang, comp):
+#     """rotate the give compomenst, respectively x and y, of the wind by a given angle, using a rotation matrix.
+#     returns a dataframe with the given compoments"""
+#     print("warning can be incorrrect")
+#     df = df.copy()
+#     ang = np.deg2rad(ang)
+#     rot_mat = np.array([[np.cos(ang), -np.sin(ang)],
+#                        [np.sin(ang), np.cos(ang)]])
+#     df[comp] = np.matmul(df[comp], rot_mat)
+#     return df
 
 # note this is "math" wind dir not the meterological one (as used by EP)
 # def add_wind_dir(df, wind_dir_name='wind_dir'):
