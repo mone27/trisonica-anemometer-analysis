@@ -209,15 +209,15 @@ Tried different methods to get by brute force the most efficient trasnsformation
  4. Brute force optimization: trying all the possible triplets of angles with ranges of 10°
  5. rotation.align_vectors !! (should be the fastest and easiest method)
  
- Obtained some rotations that make a sensible output:
+ Obtained some rotations that make a sensible output ([240, 330, 90] in xyz):
  - u is around 0 most time, but when is bigger follows decently the wm1
  - v is almost perfect
  - w does follow the wm1 but is far from being good
  
  Then tried hard to visualize the obtained rotation, but thinkercard does not rotate on custom plane so at the end using rhinoceros which is way complex but this his job, however the result was pretty useless.
- Trying also 3d plotting from matplotlib, which probably is the best way forward and the visualization is still useless since the rotation appears on random planes.
+ Trying also 3d plotting from matplotlib, which probably is the best 
  Almost giving up :(
- 
+ way forward and the visualization is still useless since the rotation appears on random planes.
  
  Ideas of stuff that needs to be done:
  - understand why v is so good
@@ -226,8 +226,32 @@ Tried different methods to get by brute force the most efficient trasnsformation
  
  
  
+ ### 01/08/2020
+ 
+ **NEED TO WRITE**
+ 
+ Checking that the data using the rotation from the optimization acutally looks good and filtering with wind is even better
+ 
+ Created set of funcs to plot vectors in 3d and using rotation by step
  
  
+### 02/08/2020
+Difference between intrisic and estrinsic angles in euler rotations (I am stupid that I don' read properly ALL the documentation)
+
+the magic angles found were for wm1 not wm1r!!!!
+
+both [ 70., 200., 140.] and 250., 340., 320. looks like good rotation on XYZ with m7 compared to wm1 but life still sucks
+
+
+
+verified that using process m_507 is the same thing of this rotation!!!
+
+ang = [  -90,    0., -135]
+seq='XYZ' 
  
- 
+#### The only sure thing
+
+the theory rotation are correct in the 3D space but the data is **TOTALLY TERRIBLE**
+
+using brute force we can obtain data that looks decent (not good) but they have no sense nor consistency
 

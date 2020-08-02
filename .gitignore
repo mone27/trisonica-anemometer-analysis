@@ -5,3 +5,4 @@ processed_data
 __pycache__
 *checkpoint.ipynb
 .ipynb-checkpoints
+*checkpoint*
