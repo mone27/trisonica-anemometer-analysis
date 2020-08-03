@@ -255,3 +255,14 @@ the theory rotation are correct in the 3D space but the data is **TOTALLY TERRIB
 
 using brute force we can obtain data that looks decent (not good) but they have no sense nor consistency
 
+
+### 03/08/2020
+
+Worked on notebook to summarize the situation of M507, discovered that without an inverted v it looks decent
+and with a 30 ° rotation (instead of the theory of 45) starts to look decent, even though when filtered it starts to be worse
+
+Conclusion is that M507 is quite bad at measuring w, and virtually all roads to make something sensible out of it has been explored.
+
+Downloaded new data from the sensors.
+
+
