@@ -265,4 +265,38 @@ Conclusion is that M507 is quite bad at measuring w, and virtually all roads to 
 
 Downloaded new data from the sensors.
 
+### 09/08/2020
+
+First test to compare fluxes, Tau can be okay but there is an high difference in H due to big differences in temperatures.
+
+Trying to filter wind dir of m507 at high frequency by replacing other values with -9999. EP understand this notation, but the result is still not equal to the EP Wind Filter function... WIP
+
+Checked windrose and it seems m507 is not taking the biggest amount of wind.
+
+ATTENTION! It seems in that in some processed datasets of WM1 there is no offset
+
+## **Change in Field settings + Testing**
+
+### 10/08/2020
+
+change of field settings, because the M507 was not oriented to take the majority of the wind
+
+Current installation:
+- M507 points to ~250° N
+- it is rotated to the N sign on the anemometer points on the bottom left when you look at the anemometer top.  
+    so tentatively the rotation should be [-90, 250, 45]
+    
+Then done tests with an portable fan
+
+- 13:25 horizontal wind from 230 on M507
+- 13:26 vertical wind from the bottom of M507
+- 13:28 horizontal wind from 340 (where the anemometer should not work properly) on M507
+- 13:29 horizontal wind from N of the M506 on M506
+- 13:30 horizontal wind from N of WindMaster WM1 (310° ) on WM1
+
+
+
+Data from 13:00 till 14:00 CEST of 10 Ago 2020 **should not be considered**
+
+
 
