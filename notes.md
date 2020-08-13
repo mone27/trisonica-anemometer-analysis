@@ -284,7 +284,7 @@ change of field settings, because the M507 was not oriented to take the majority
 Current installation:
 - M507 points to ~250° N
 - it is rotated to the N sign on the anemometer points on the bottom left when you look at the anemometer top.  
-    so tentatively the rotation should be [-90, 250, 45]
+    so tentatively the rotation should be [-90, 70, 45]
     
 Then done tests with an portable fan
 
@@ -297,6 +297,45 @@ Then done tests with an portable fan
 
 
 Data from 13:00 till 14:00 CEST of 10 Ago 2020 **should not be considered**
+
+
+### 11/08/2020
+
+Processed data from previous night install
+Added 25° offset in M506
+
+need to confirm offset of M506
+
+Trisonica uses the std reference system
+
+which means that a rotation of 'z' [90] should bring back to EP reference system
+
+
+### 12/08/2020
+
+Hopefully found fan validated and tested final rotations 🎉
+
+```python
+rot_m507 = R.from_euler('XYZ', [90, 0,  135], degrees=True) 
+rot_m506 = R.from_euler('z', [-90.], degrees=True)```
+
+The Trisonica are setted on the 'std' reference system which means:
+
+- u is positive for wind that comes from the West to the East
+- v is positive for wind that comes from the South to the North
+
+This is different from EP one but with one rotation can be converted
+
+
+### 13/08/2020
+
+
+trying to for 3 hours to debug an issue in wind filtering. Giving up and rewriting the preprocessing code in something easier to mantain  and debug
+
+Basic structure of thesis and looking at fluxes
+
+Successfully create FrankeStonica with hor wind from m6 and vertical wind from m7.. look interesting but still more work needed
+
 
 
 
