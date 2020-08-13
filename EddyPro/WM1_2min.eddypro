@@ -1,9 +1,9 @@
 ;EDDYPRO_PROCESSING
 [Project]
 creation_date=2018-08-10T17:17:40
-last_change_date=2020-08-12T14:09:19
+last_change_date=2020-08-12T15:45:39
 file_name=Z:/Documents/Tesi/trisonica-anemometer-comparison/EddyPro/WM1_2min.eddypro
-run_mode=1
+run_mode=0
 run_fcc=0
 project_title=WM1_2m
 sw_version=7.0.6
@@ -101,7 +101,7 @@ sa_min_st_le=3.0000
 sa_min_st_h=5.0000
 add_sonic_lptf=1
 horst_lens=2
-ex_file=Z:/Documents/Tesi/trisonica-anemometer-comparison/2020_data/data_field_v2_from_20208010/processed/2min/eddypro_WM1_2min_fluxnet_2020-08-12T140919_exp.csv
+ex_file=Z:/Documents/Tesi/trisonica-anemometer-comparison/2020_data/data_field_v2_from_20208010/processed/2min/eddypro_WM1_2min_fluxnet_2020-08-12T105712_exp.csv
 sa_bin_spectra=Z:/Documents/Tesi/trisonica-anemometer-comparison/2020_data/data_field_v2_from_20208010/processed/2min/eddypro_binned_cospectra
 sa_full_spectra=Z:/Documents/Tesi/trisonica-anemometer-comparison/2020_data/data_field_v2_from_20208010/processed/2min/eddypro_full_cospectra
 ex_dir=
