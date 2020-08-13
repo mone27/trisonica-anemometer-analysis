@@ -7,17 +7,27 @@ from pathlib import Path
 from sklearn.linear_model import LinearRegression
 from scipy.constants import convert_temperature
 
+from scipy.spatial.transform import Rotation as R
+
+
+import matplotlib.patches as mpatches
+from mpl_toolkits.mplot3d import Axes3D
+import itertools
+from matplotlib.patches import FancyArrowPatch
+from mpl_toolkits.mplot3d import proj3d
+
 # to mark that the angle must be in degrees and not radians
 DegAng = int
 
 # %% general funcs
+
 
 def test_close(a,b): assert np.allclose(a,b)
 
 def get_ax(nrows=1, ncols=1, **kwargs): return plt.subplots(nrows, ncols, **kwargs)[1]
 
 def mbe(a,b): return (a-b).abs().mean()
-def mse(x, y): return (x-y).pow(2).mean()
+def mse(x, y): return ((x-y)**2).mean()
 
 def mod(ang: DegAng):
     """returns the modulo of 360"""
@@ -47,19 +57,27 @@ def pol2cart(theta, r):
     return x, y
 
 
-def rotate_ang(data, ang: DegAng):
-    """naive (but working) approach to rotate the u and v componets by given angles"""
-    wind_dir, wind_speed = cart2pol(data[:, 0], data[:, 1])
-    wind_dir += np.deg2rad(ang)
-    return np.column_stack(pol2cart(wind_dir, wind_speed))
+# def rotate_ang(data, ang: DegAng):
+#     """naive (but working) approach to rotate the u and v componets by given angles"""
+#     wind_dir, wind_speed = cart2pol(data[:, 0], data[:, 1])
+#     wind_dir += np.deg2rad(ang)
+#     return np.column_stack(pol2cart(wind_dir, wind_speed))
+
+def add_hor_wind_speed(df):
+    df['wind_speed_hor'] = wind_speed_comp(df, ['u', 'v'])
+    return df
 
 
 # %% plot helpers
-def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=True, plot_info=[], **kwargs):
+def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=True, plot_info=[], ax=None, **kwargs):
     """for each component does a line plot with """
     n_plts = (1,len(cols)); sharey = True; sharex = False
     if not vertical:n_plts=(len(cols), 1); sharey=False; sharex=True  #invert rows/columns
-    fig, axes = plt.subplots(*n_plts, sharey=sharey, sharex=sharex)
+    
+    if ax is not None: axes = ax # use user passed axes
+    else:
+        fig, axes = plt.subplots(*n_plts, sharey=sharey, sharex=sharex)
+  
     if not isinstance(axes, Iterable): axes = np.array([axes])  # if axes is no iterable  make it iterable
     for i, col in enumerate(cols):
         for ii, df in enumerate(dfs):
@@ -71,10 +89,11 @@ def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=Tr
             df[col].plot(ax=axes[i], **(info), **kwargs)
         axes[i].set_title(col)
         axes[i].legend()
+#         axes[i].grid()
     return axes
 
 
-def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True, title=None, figsize=(6,5), plot_info=[],**kwargs):
+def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True, title=None, figsize=(6,5), plot_info=[], ax=None,**kwargs):
     try:
         df1, df2 = dfs
     except ValueError:
@@ -83,8 +102,12 @@ def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True,
     n_plts = (1,len(cols)); sharey = True; sharex = False
 
     if not vertical:n_plts=(len(cols), 1); sharey=False; sharex=True  #invert rows/columns
-    fig, axes = plt.subplots(*n_plts, figsize=figsize)
-    fig.suptitle(title)
+    
+    if ax is not None: axes = ax # use user passed axes
+    else:
+        fig, axes = plt.subplots(*n_plts, figsize=figsize)
+        fig.suptitle(title)
+        
     if not isinstance(axes, Iterable): axes = np.array([axes])  # if axes is no iterable  make it iterable
     for i, col in enumerate(cols):
         axes[i].scatter(df1[col], df2[col], **kwargs)
@@ -112,11 +135,11 @@ def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True,
         axes[i].legend()
 
 
-def plot_dist_comp(dfs, cols='uvw'):
+def plot_dist_comp(dfs, cols='uvw', **kwargs):
     fig, axes = plt.subplots(1,1)
     for df in dfs:
         for c in cols:
-            sns.distplot(df[c], norm_hist=True, ax=axes, label=c)
+            sns.distplot(df[c], norm_hist=True, ax=axes, label=c, **kwargs)
     axes.legend()
 
 
@@ -133,11 +156,13 @@ def filter_by_wind_ns_dir(df, ang):
 def filter_by_wind_dir(df, start_ang: DegAng, range_ang: DegAng, both_dirs=True):
     """create a boolean filter where there direction is start_ang +/- range_ang.
      If both dirs considers (True also start_ang-180) +/- range_ang"""
-    w = df.wind_dir
-    filt = (w > mod((start_ang - range_ang))) & (w < mod(start_ang + range_ang))
-    if both_dirs: filt = filt | ((w > mod(((start_ang-180) - range_ang))) & (w < mod((start_ang-180) + range_ang)))
-    return filt
+    return filter_by_wind_dir_single(df.wind_dir, start_ang, range_ang, both_dirs)
 
+def filter_by_wind_dir_single(wind_dir, start_ang: DegAng, range_ang: DegAng, both_dirs=True):
+    """filter the wind_dir from the provide np array or Pandas Series"""
+    filt = (wind_dir > mod((start_ang - range_ang))) & (wind_dir < mod(start_ang + range_ang))
+    if both_dirs: filt = filt | ((wind_dir > mod(((start_ang-180) - range_ang))) & (wind_dir< mod((start_ang-180) + range_ang)))
+    return filt
 
 def add_angle_attack(df):
     df = df.copy()
@@ -151,16 +176,16 @@ def add_wind_speed(df: pd.DataFrame) -> pd.DataFrame:
     df['wind_speed'] = np.sqrt(df.u**2 + df.v**2 + df.w**2)
     return df
 
-def get_wind_dir(df):
+def get_wind_dir(u, v):
     """same behaviour of EP SingleWindDirection"""
-    return (180 - np.rad2deg(np.arctan2(df.v, df.u))) % 360 
+    return mod((180 - np.rad2deg(np.arctan2(v, u))))
 def fix_quadrant(wd): return (180 - wd) % 360
 
 
 def add_wind_dir(wind, col_name='wind_dir'):
     """add wind EP wind dir to df"""
     wind = wind.copy()
-    wind[col_name] = get_wind_dir(wind)
+    wind[col_name] = get_wind_dir(wind.u, wind.v)
     return wind
 
 
@@ -168,12 +193,24 @@ def wind_speed_comp(df, w_comp):
     """calculate wind speed only with given components"""
     return np.sqrt(df.loc[:, list(w_comp)].pow(2).sum(axis=1)).copy()
 
-def rotate_wind_ang(df, ang):
-    df = df.copy()
-    wind_dir, wind_speed = cart2pol(df.u, df.v)
-    wind_dir += np.deg2rad(ang)
-    df.u, df.v = pol2cart(wind_dir, wind_speed)
-    return df
+def rotate_wind_hor_plane(wind, ang):
+    
+    wind_rot = R.from_euler('z', [ang], degrees=True)
+
+    new_wind = wind_rot.apply(wind[['u', 'v', 'w']].copy().to_numpy())
+    new_wind = pd.DataFrame(new_wind)
+    new_wind.columns = list('uvw')
+    new_wind.index = wind.index
+    new_wind = new_wind.pipe(add_wind_speed).pipe(add_wind_dir).pipe(add_hor_wind_speed)
+    
+    return new_wind
+
+# def rotate_wind_ang(df, ang):
+#     df = df.copy()
+#     wind_dir, wind_speed = cart2pol(df.u, df.v)
+#     wind_dir += np.deg2rad(ang)
+#     df.u, df.v = pol2cart(wind_dir, wind_speed)
+#     return df
 
 # Warning need to check this is correct
 # def rotate_wind(df, ang):
@@ -224,3 +261,83 @@ def load_ep_cache(file: Path, cache_dir=Path(".")) -> pd.DataFrame:
         df = from_ep_full(file).pipe(drop_empty_cols)
         df.to_hdf(hdf5_path, key="df")
         return df
+    
+    
+#### vectors and 3d thing
+
+
+
+# https://stackoverflow.com/questions/22867620/putting-arrowheads-on-vectors-in-matplotlibs-3d-plot
+class Arrow3D(FancyArrowPatch):
+    def __init__(self, xs, ys, zs, *args, **kwargs):
+        FancyArrowPatch.__init__(self, (0,0), (0,0), *args, **kwargs)
+        self._verts3d = xs, ys, zs
+
+    def draw(self, renderer):
+        xs3d, ys3d, zs3d = self._verts3d
+        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
+        self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
+        FancyArrowPatch.draw(self, renderer)
+
+color_cycle = ['r', 'g', 'b', 'y', 'm']
+def plot_vecs3d(vecs, colors=color_cycle, ax=None, lw=3):
+    
+    ax = ax or  plt.figure().add_subplot(111, projection='3d')    
+    ax.set_xlim3d(min(vecs[:, 0].min(), -1), max(vecs[:, 0].max(), 1))
+    ax.set_ylim3d(min(vecs[:, 1].min(), -1), max(vecs[:, 1].max(), 1))
+    ax.set_zlim3d(min(vecs[:, 2].min(), -1), max(vecs[:, 2].max(), 1))
+    ax.plot(0,0,0) #origin
+    for vec, color in zip(vecs, itertools.cycle(colors)):
+        a = Arrow3D([0, vec[0]], [0,vec[1]], [0, vec[2]], mutation_scale=20, 
+                lw=lw, arrowstyle="-|>", color=color)
+        ax.add_artist(a)
+    plt.draw()
+    return ax
+
+axis_conv = {'x': 0, 'y': 1, 'z': 2}
+def plot_vecs2d(vecs, plane='xy', colors=color_cycle, ax=None, lw=3):
+    select = [axis_conv[plane[0]], axis_conv[plane[1]]]
+    ax = ax or  get_ax()
+    
+    ax.set_xlim(min(vecs[:, select[0]].min(), -1) - .2, max(vecs[:, select[0]].max(), 1) +.2)
+    ax.set_ylim(min(vecs[:, select[1]].min(), -1) - .2, max(vecs[:, select[1]].max(), 1) +.2)
+    
+    for vec, color in zip(vecs, itertools.cycle(colors)):
+        ax.arrow(0,0, vec[select[0]], vec[select[1]], color=color, lw=lw)
+    ax.set_xlabel(plane[0])
+    ax.set_ylabel(plane[1])
+    return ax
+    
+
+def plot_rotation_steps(v0, angs, euler='xyz', figsize=(18,16)):
+    rot_ang = np.array([0,0,0])
+    fig = plt.figure(figsize=figsize)
+    vecs = [v0]
+    
+    for i in range(3):
+        rot_ang[i] = angs[i]
+        
+        vecs.append(R.from_euler(euler, rot_ang, degrees=True).apply(v0))
+        
+        ax=fig.add_subplot(2,2,i+1, projection='3d')
+        ax.set_title(f"adding a rotation on {euler[i]} of {angs[i]} rotation of {rot_ang}")
+        plot_vecs3d(vecs[i+1], colors=['r', 'g', 'b'], ax=ax, lw=5)
+        plot_vecs3d(vecs[i], colors=['fuchsia', 'yellow', 'cyan'], ax=ax, lw=2) # mark the old position
+    
+    ax = fig.add_subplot(224, projection='3d')
+    ax.set_title("original vs final")
+    plot_vecs3d(R.from_euler(euler, angs, degrees=True).apply(v0), colors=['r', 'g', 'b'], ax=ax, lw=5 )
+    plot_vecs3d(v0, colors=['fuchsia', 'yellow', 'cyan'], ax=ax, lw=2) # plot origins as reference only on the last one
+    
+
+# TODO Rewrit this properly
+def side_by_side(*objs, **kwds):
+    ''' Une fonction print objects side by side '''
+    from pandas.io.formats.printing import adjoin
+    space = kwds.get('space', 4)
+    reprs = [repr(obj).split('\n') for obj in objs]
+    print(adjoin(space, *reprs))
+        
+        
+
+v0 = np.array([[1,0,0], [0,1,0], [0,0,1]])
