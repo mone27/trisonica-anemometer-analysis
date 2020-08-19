@@ -11,7 +11,6 @@ from scipy.spatial.transform import Rotation as R
 log.basicConfig(level=log.INFO)  # uncomment to see messages from extract
 
 
-
 # General utility func
 
 
@@ -56,14 +55,13 @@ def replace_filtered_wind_dir(data, wind_dir, start_ang, range_ang, replace_valu
     return data
 
 
-
 ### specific configutation and func
-
 
 in_dir = Path("2020_data/data_field_v2_from_20208010/raw")
 out_dir = Path("2020_data/data_field_v2_from_20208010/preprocessed")
 
 trs_load_cfg = [(10, 12, 14, 16)]
+wm_load_cfg = [(2, 3, 4, 6), ',']
 
 rot_m6 = ['z', [-90]]
 rot_m7 = ['XYZ', [90, -250, 135]]
@@ -72,28 +70,6 @@ rot_wm = ['z', [50]]
 u, v, w, t = 0, 1, 2, 3
 
 replace = True
-
-
-def make_mytrs(m6_path):
-    # path is m6 path
-
-    m7_path = get_other_anem_name(m6_path, '_TRS_M00507_com2.raw')
-
-    m6 = load(m6_path, *trs_load_cfg)
-    m7 = load(m7_path, *trs_load_cfg)
-
-    m6 = rotate(m6, *rot_m6)
-    m7 = rotate(m7, *rot_m7)
-
-    length = min(len(m6), len(m7))  # can be slight different in length
-
-    # Sonic temp taken from the m7 because it looked it was better .... maybe should make a mean
-    mytrs = np.column_stack([m6[:length, u], m6[:length, v], m7[:length, w], m7[:length, t]])
-
-    save_name = get_other_anem_name(m6_path, "_mytrs.csv")
-    save_path = get_save_path(save_name, out_dir)
-
-    save(save_path, mytrs)
 
 
 def process_m506(m6_path):
@@ -116,6 +92,7 @@ def process_wm(wm_path):
     save_path = get_save_path(wm_path, out_dir)
     save(save_path, wm, replace=replace)
 
+
 def process_wm1_filtered(wm_path):
     wm = load(wm_path, *wm_load_cfg)
     wm = rotate(wm, *rot_wm)
@@ -130,12 +107,9 @@ def process_wm1_filtered(wm_path):
     save(save_path, wm, replace=replace)
 
 
+### parallel runner
 
-### paralle runner
-
-
-to_run = [(make_mytrs, "*_TRS_M00506_com3.raw"),
-          (process_m506, "*_TRS_M00506_com3.raw"),
+to_run = [(process_m506, "*_TRS_M00506_com3.raw"),
           (process_m507, "*_TRS_M00507_com2.raw"),
           (process_wm, "*_WM_174605_com1.raw")
           ]
