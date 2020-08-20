@@ -67,6 +67,20 @@ def add_hor_wind_speed(df):
     df['wind_speed_hor'] = wind_speed_comp(df, ['u', 'v'])
     return df
 
+def add_time_of_day(df):
+    """Add a categorical column 'time_day' formatted and hour:minutes """
+    df = df.copy()
+    df['time_day'] = pd.Categorical(df.index.strftime("%H:%M"))
+    return df
+
+def add_wind_dir_binned(df, bins=8):
+    df = df.copy()
+    df['wind_dir_binned'] = pd.cut(df.wind_dir, bins=bins)
+    return df
+
+
+
+
 
 # %% plot helpers
 def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=True, plot_info=[], ax=None, **kwargs):

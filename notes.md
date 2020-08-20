@@ -337,5 +337,14 @@ Basic structure of thesis and looking at fluxes
 Successfully create FrankeStonica with hor wind from m6 and vertical wind from m7.. look interesting but still more work needed
 
 
+### 19/08/2020
+
+Finished refactor of processing_tools
+
+Tested that the output of WM1 and M6 is same of old preprocessing 🎉
+
+
+
+
 
 
