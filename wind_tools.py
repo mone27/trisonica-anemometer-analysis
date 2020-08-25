@@ -275,8 +275,22 @@ def load_ep_cache(file: Path, cache_dir=Path(".")) -> pd.DataFrame:
         df = from_ep_full(file).pipe(drop_empty_cols)
         df.to_hdf(hdf5_path, key="df")
         return df
-    
-    
+
+
+def load_high_freq_data(f: Path) -> pd.DataFrame:
+    """Load a proprocessed half an hour and returns an dataframe properly indexed"""
+    df = pd.read_csv(f)
+    if len(df) >= 18000: # half an hour at 10Hz
+        df = df[:18000]
+    else:
+        empty_rows = pd.DataFrame([[np.nan] * len(df.columns)] * (18000 - len(df)), columns=df.columns)
+        df = df.append(empty_rows)
+    assert len(df) == 18000
+
+    start_date = pd.to_datetime(f.name[:13])
+    df.index = pd.TimedeltaIndex(df.index*100, unit='ms') + start_date
+    return df
+
 #### vectors and 3d thing
 
 
