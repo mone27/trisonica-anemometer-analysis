@@ -75,7 +75,7 @@ def add_time_of_day(df):
 
 def add_wind_dir_binned(df, bins=8):
     df = df.copy()
-    df['wind_dir_binned'] = pd.cut(df.wind_dir, bins=bins)
+    df['wind_dir_binned'] = pd.cut(df.wind_dir, bins=np.arange(0, 361, 360/bins))
     return df
 
 
@@ -83,7 +83,7 @@ def add_wind_dir_binned(df, bins=8):
 
 
 # %% plot helpers
-def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=True, plot_info=[], ax=None, **kwargs):
+def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=False, plot_info=[], ax=None, **kwargs):
     """for each component does a line plot with """
     n_plts = (1,len(cols)); sharey = True; sharex = False
     if not vertical:n_plts=(len(cols), 1); sharey=False; sharex=True  #invert rows/columns
@@ -93,6 +93,7 @@ def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=Tr
         fig, axes = plt.subplots(*n_plts, sharey=sharey, sharex=sharex)
   
     if not isinstance(axes, Iterable): axes = np.array([axes])  # if axes is no iterable  make it iterable
+    cols = list(cols)
     for i, col in enumerate(cols):
         for ii, df in enumerate(dfs):
             try:
@@ -100,6 +101,7 @@ def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=Tr
             except IndexError:
                 # if there is nothing try to get the plot info from the df otherwise fall back to empty one
                 info = df.plot_info if hasattr(df,'plot_info') else {}
+            
             df[col].plot(ax=axes[i], **(info), **kwargs)
         axes[i].set_title(col)
         axes[i].legend()
@@ -107,7 +109,7 @@ def plot_components(dfs: Iterable[pd.DataFrame], cols=('u','v','w'), vertical=Tr
     return axes
 
 
-def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True, title=None, figsize=(6,5), plot_info=[], ax=None,**kwargs):
+def plot_components_scatter(dfs, cols=('u','v','w'), vertical=True, linreg=True, title=None, figsize=None, plot_info=[], ax=None,**kwargs):
     try:
         df1, df2 = dfs
     except ValueError:
@@ -180,8 +182,7 @@ def filter_by_wind_dir_single(wind_dir, start_ang: DegAng, range_ang: DegAng, bo
 
 def add_angle_attack(df):
     df = df.copy()
-    w_hor = np.sqrt(df.u**2+df.v**2)
-    df['angle_attack'] = np.rad2deg(np.arctan2(df.w, w_hor))
+    df['angle_attack'] = get_aoa(df.u, df.v, df.w)
     return df
 
 
@@ -193,6 +194,11 @@ def add_wind_speed(df: pd.DataFrame) -> pd.DataFrame:
 def get_wind_dir(u, v):
     """same behaviour of EP SingleWindDirection"""
     return mod((180 - np.rad2deg(np.arctan2(v, u))))
+
+def get_aoa(u,v,w):
+    w_hor = np.sqrt(u**2+v**2)
+    return np.rad2deg(np.arctan2(w, w_hor))
+
 def fix_quadrant(wd): return (180 - wd) % 360
 
 
@@ -250,7 +256,40 @@ def rotate_wind_hor_plane(wind, ang):
 #     df = df.copy()
 #     df[wind_dir_name] = np.rad2deg(np.arctan2(df.v, df.u))
 #     return df
+ 
+
     
+## Fluxes
+
+def add_H_raw_flux(df, interval):
+    res = df.resample(interval)
+    H = np.zeros(len(res))
+    for i, (_, data) in enumerate(res):
+        H[i] = data.w.cov(data.t)
+    ret = res.mean()
+    ret['H'] = H
+    return ret
+
+def add_Tau_raw_flux(df, interval):
+    res = df.resample(interval)
+    tau= np.zeros(len(res))
+    for i, (_, data) in enumerate(res):
+        tau[i] = np.sqrt(data.w.cov(data.u)**2 + data.w.cov(data.v)**2)
+    ret = res.mean()
+    ret['Tau'] = tau
+    return ret
+
+def add_raw_fluxes(df, interval):
+    res = df.resample(interval)
+    tau= np.zeros(len(res))
+    H = np.zeros(len(res))
+    for i, (_, data) in enumerate(res):
+        tau[i] = np.sqrt(data.w.cov(data.u)**2 + data.w.cov(data.v)**2)
+        H[i] = data.w.cov(data.t)
+    ret = res.mean()
+    ret['Tau'] = tau
+    ret['H'] = H
+    return ret.dropna()
 
 # %% dataset loading from EddyPro
 
@@ -277,7 +316,7 @@ def load_ep_cache(file: Path, cache_dir=Path(".")) -> pd.DataFrame:
         return df
 
 
-def load_high_freq_data(f: Path) -> pd.DataFrame:
+def load_high_freq_data(f: Path, max_tol=.1) -> pd.DataFrame:
     """Load a proprocessed half an hour and returns an dataframe properly indexed"""
     df = pd.read_csv(f)
     if len(df) >= 18000: # half an hour at 10Hz
@@ -289,6 +328,13 @@ def load_high_freq_data(f: Path) -> pd.DataFrame:
 
     start_date = pd.to_datetime(f.name[:13])
     df.index = pd.TimedeltaIndex(df.index*100, unit='ms') + start_date
+    
+    
+    if df.iloc[:, 0].isna().sum() < len(df)*max_tol:
+        return df.interpolate()
+    else:
+        print(f"not enough data {f}")
+        return df
     return df
 
 #### vectors and 3d thing

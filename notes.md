@@ -344,6 +344,18 @@ Finished refactor of processing_tools
 Tested that the output of WM1 and M6 is same of old preprocessing 🎉
 
 
+### 30/08/2020
+
+during the night it rained, there may be the need to discard data for this period
+
+
+
+### 01/09/2020
+
+issues with the computer, it saved all data up the the 30th at midday and then only WMs. Restarted and everything works
+**swapped anemometers** between 11:30 and 12:00.
+TrsH had issues in restarting data till 13:00 isn't good
+
 
 
 

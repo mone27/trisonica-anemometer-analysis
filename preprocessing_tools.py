@@ -5,7 +5,7 @@ import numpy as np
 from multiprocessing import Pool
 import logging as log
 from dataclasses import dataclass
-
+from functools import partial
 from wind_tools import *
 from scipy.spatial.transform import Rotation as R
 
@@ -49,7 +49,7 @@ def rotate(data, seq, angs):
     return rot_data
 
 
-def replace_filtered_wind_dir(data, wind_dir, start_ang, range_ang, replace_value=-9999, both_dirs=True):
+def replace_filt_dir(data, wind_dir, start_ang, range_ang, replace_value=-9999, both_dirs=True):
 
     filt = ~filter_by_wind_dir_single(wind_dir, start_ang, range_ang, both_dirs=both_dirs)
 
@@ -60,103 +60,54 @@ def replace_filtered_wind_dir(data, wind_dir, start_ang, range_ang, replace_valu
     return data
 
 def replace_filt_aoa(data, aoa, range=30, replace_value=-9999):
-    filt = aoa.abs() < range
+    filt = abs(aoa) > range
     length = min(len(data), len(filt))
     data[:length][filt[:length]] = replace_value
     return data
 
 
-### specific configutation and func
-@dataclass
-class Settings:
-    in_dir = Path("2020_data/data_field_v2_from_20208010/raw")
-    out_dir = Path("2020_data/data_field_v2_from_20208010/preprocessed")
-
-    trs_load_cfg = [(10, 12, 14, 16)]
-    wm_load_cfg = [(2, 3, 4, 6), ',']
-
-    rot_m6 = ['z', [-90]]
-    rot_m7 = ['XYZ', [90, -250, 135]]
-    rot_wm = ['z', [50]]
-    filt_ang = [250, 30]
-
-    replace = True
-
-setg = Settings()
 
 
-def process_m506(m6_path):
-    save_path = get_save_path(m6_path, setg.out_dir)
+
+def process(path, setg=None):
+    save_path = get_save_path(path, setg.out_dir)
     if not should_process(save_path, setg.replace): return
 
-    m6 = load(m6_path, *setg.trs_load_cfg)
-    m6 = rotate(m6, *setg.rot_m6)
+    anem = load(path, *setg.load_cfg)
+    anem = rotate(anem, *setg.rot)
 
-    save(save_path, m6)
+    save(save_path, anem)
 
-
-def process_m507(m7_path):
-    save_path = get_save_path(m7_path, setg.out_dir)
-    if not should_process(save_path, setg.replace): return
-
-    m7 = load(m7_path, *setg.trs_load_cfg)
-    m7 = rotate(m7, *setg.rot_m7)
-
-    save(save_path, m7)
-
-
-def process_wm(wm_path):
-    save_path = get_save_path(wm_path, setg.out_dir)
-    if not should_process(save_path, setg.replace): return
-
-    wm = load(wm_path, *setg.wm_load_cfg)
-    wm = rotate(wm, *setg.rot_wm)
-
-    save(save_path, wm)
-
-
-def process_wm1_filtered(wm_path):
-
-    wm = load(wm_path, *setg.wm_load_cfg)
-    wm = rotate(wm, *setg.rot_wm)
-
-    wd = get_wind_dir(wm[:,0], wm[:,1])
-
-    wm_filt = replace_filtered_wind_dir(wm, wd, *setg.filt_ang)
-
-    save_path = get_save_path(wm_path, setg.out_dir, '_filt_dir')
-    save(save_path, wm_filt)
-
-def process_filt_dir(path):
+def process_filt_dir(path, setg=None):
     save_path = get_save_path(path, setg.out_dir, '_filt_dir')
     if not should_process(save_path, setg.replace): return
     
-    anem = load(path, *setg.trs_load_cfg)
-    anem = rotate(anem, *setg.rot_anem)
+    anem = load(path, *setg.load_cfg)
+    anem = rotate(anem, *setg.rot)
 
-    wm_path = get_other_anem_name(path, '_WM_174605_com1.raw')    
+    wm_path = get_other_anem_name(path, setg.wm_name)
     wm = load(wm_path, *setg.wm_load_cfg)
     wm = rotate(wm, *setg.rot_wm)
     
-    wd = get_wind_dir(wm[:,0], wm[:,1])
-    anem_filt = replace_filtered_wind_dir(anem, wd, *setg.filt_ang)
+    wd = get_wind_dir(wm[:,u], wm[:,v])
+    anem_filt = replace_filt_dir(anem, wd, *setg.filt_ang)
 
     save(save_path, anem_filt)
 
 
-def process_filt_aoa(path):
-    save_path = get_save_path(path, setg.out_dir, '_filt_dir')
+def process_filt_aoa(path, setg=None):
+    save_path = get_save_path(path, setg.out_dir, '_filt_aoa')
     if not should_process(save_path, setg.replace): return
 
-    anem = load(path, *setg.trs_load_cfg)
-    anem = rotate(anem, *setg.rot_anem)
+    anem = load(path, *setg.load_cfg)
+    anem = rotate(anem, *setg.rot)
 
-    wm_path = get_other_anem_name(path, '_WM_174605_com1.raw')
+    wm_path = get_other_anem_name(path, setg.wm_name)
     wm = load(wm_path, *setg.wm_load_cfg)
     wm = rotate(wm, *setg.rot_wm)
 
     aoa = get_aoa(wm[:, u], wm[:, v], wm[:, w])
-    anem_filt = replace_filtered_wind_dir(anem, aoa, *setg.filt_ang)
+    anem_filt = replace_filt_aoa(anem, aoa, *setg.filt_ang)
 
     save(save_path, anem_filt)
     
@@ -164,24 +115,46 @@ def process_filt_aoa(path):
 # process_wm1_filtered("2020_data/data_field_v2_from_20208010/raw/20200810-1430_WM_174605_com1.raw")
 
 ### parallel runner
+### specific configutation and func
+@dataclass
+class Settings:
+    in_dir = Path("2020_data/data_field_v2_from_20208010/raw")
+    out_dir = Path("2020_data/data_field_v2_from_20208010/preprocessed")
+    load_cfg: list
+    rot: list
+    name: str
+    replace = True
+    wm_load_cfg = [(2, 3, 4, 6), ',']
+    wm_name = "_WM_174605_com1.raw"
+    rot_wm = ['z', [50]]
+    filt_ang = [250, 30]
 
-to_run = [(process_m506, "*_TRS_M00506_com3.raw"),
-          (process_m507, "*_TRS_M00507_com2.raw"),
-          (process_wm, "*_WM_174605_com1.raw"),
-          # (process_wm1_filtered, "*_WM_174605_com1.raw"),
-          # (process_m507_filtered, "*_TRS_M00507_com2.raw"),
+
+setg_m506 = Settings(load_cfg=[(10, 12, 14, 16)], rot=['z', [-90]], name="*_TRS_M00506_com3.raw")
+setg_m507 = Settings(load_cfg=[(10, 12, 14, 16)], rot=['XYZ', [90, -250, 135]], name="*_TRS_M00507_com2.raw")
+setg_wm1 = Settings(load_cfg=[(2, 3, 4, 6), ','], rot=['z', [50]], name="*_WM_174605_com1.raw")
+
+to_run = [(process, setg_m506 ),
+          (process, setg_m507 ),
+          (process, setg_wm1),
+          (process_filt_aoa, setg_m506 ),
+          (process_filt_aoa, setg_m507 ),
+          (process_filt_aoa, setg_wm1),
+          (process_filt_dir, setg_m506 ),
+          (process_filt_dir, setg_m507 ),
+          (process_filt_dir, setg_wm1),
           ]
 
 
 def runner(to_run, parallel=True):
     with Pool() as p:
-        for func, glob in to_run:
+        for func, setg in to_run:
 
-            print(f"processing {func.__name__}")
+            print(f"{func.__name__} for {setg.name}")
             if parallel:
-                p.map(func, setg.in_dir.glob(glob))
+                p.map(partial(func, setg=setg), setg.in_dir.glob(setg.name))
             else:
-                list(map(func, setg.in_dir.glob(glob)))
+                list(map(func, setg.in_dir.glob(setg.name)))
 
 
 def main(log_level=log.INFO, parallel=True):
