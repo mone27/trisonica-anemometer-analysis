@@ -1,4 +1,4 @@
-# trisonica-anemometer-analysis
+# Trisonica anemometer analysis
 this project is done as my bachelor thesis in forestry at Università della Tuscia.
 The goal was to understand the feasibility of using a low cost anemometer (Trisonica mini) in Eddy Covariance applications.
 
